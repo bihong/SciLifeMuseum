@@ -1,0 +1,5 @@
+{
+  "name": "SciLife Museum",
+  "description": "An interactive educational app that transforms abstract scientific and mathematical concepts into real-world museum exhibits. It features AI-powered explanations, visualizations, and daily-life scenario quizzes tailored to the student's education level.",
+  "requestFramePermissions": []
+}
