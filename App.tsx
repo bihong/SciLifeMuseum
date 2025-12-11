@@ -1,16 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ConceptView from './components/ConceptView';
 import QuizView from './components/QuizView';
 import { StudentLevel, AppState, ConceptData } from './types';
 import { getConceptDetails, generateConceptImage, generateRealWorldQuiz, generateMoreExperiments } from './services/geminiService';
+import { GraduationCap, KeyRound } from 'lucide-react';
 
 const App: React.FC = () => {
   const [level, setLevel] = useState<StudentLevel>(StudentLevel.MIDDLE);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [currentConcept, setCurrentConcept] = useState<ConceptData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        const has = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(has);
+      } else {
+        // Fallback: If no aistudio global (e.g. local dev), check if env var is set
+        if (process.env.API_KEY) {
+          setHasApiKey(true);
+        }
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleApiKeySelect = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Assume success immediately to handle race conditions as per docs
+      setHasApiKey(true);
+    }
+  };
 
   const handleConceptSearch = async (topic: string) => {
     setAppState(AppState.SEARCHING);
@@ -74,6 +99,32 @@ const App: React.FC = () => {
       };
     });
   };
+
+  if (!hasApiKey) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-white/10 rounded-3xl p-8 text-center shadow-2xl animate-fade-in">
+          <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <GraduationCap className="w-8 h-8 text-indigo-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">SciLife Museum</h1>
+          <p className="text-slate-400 mb-8 leading-relaxed">
+            Please verify your API access key to enter the museum and explore our AI-powered exhibits.
+          </p>
+          <button 
+            onClick={handleApiKeySelect}
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2 group"
+          >
+            <KeyRound className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+            Connect API Key
+          </button>
+          <p className="mt-6 text-xs text-slate-500">
+             Uses Google Gemini API. <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-300">Billing Information</a>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30">
